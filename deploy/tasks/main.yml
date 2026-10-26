@@ -1,0 +1,31 @@
+---
+- name: Install Docker
+  apt:
+    name:
+      - docker.io
+      - python3-docker
+    state: present
+    update_cache: yes
+
+- name: Create dir
+  file:
+    path: /opt/app/webapps
+    state: directory
+    mode: '0755'
+
+- name: Copy war file to target host
+  copy:
+    src: /tmp/hello.war
+    dest: /opt/app/webapps/ROOT.war
+    mode: '0644'
+
+- name: Run Tomcat container
+  docker_container:
+    name: tomcat_prod
+    image: tomcat:9-jdk11
+    ports:
+      - "80:8080"
+    volumes:
+      - /opt/app/webapps/ROOT.war:/usr/local/tomcat/webapps/ROOT.war
+    restart_policy: always
+    state: started

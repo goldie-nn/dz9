@@ -1,0 +1,42 @@
+---
+- name: install Docker, Git, Python
+  apt:
+    name:
+      - docker.io
+      - git
+      - python3-docker
+    state: present
+    update_cache: yes
+
+- name: git clone repository java testbox
+  git:
+    repo: 'https://github.com/boxfuse/boxfuse-sample-java-war-hello'
+    dest: /opt/boxfuse-sample
+    version: master
+    force: yes
+
+- name: build java app
+  docker_container:
+    name: maven_builder
+    image: maven:3.8-openjdk-11
+    volumes:
+      - /opt/boxfuse-sample:/app
+      - /root/.m2:/root/.m2
+    working_dir: /app
+    command: mvn clean package
+    cleanup: yes
+    state: started
+
+- name: wait for build to complete
+  docker_container_info:
+    name: maven_builder
+  register: result
+  until: not result.container.State.Running
+  retries: 60
+  delay: 10
+
+- name: fetch built war file to control node
+  fetch:
+    src: /opt/boxfuse-sample/target/hello-1.0.war
+    dest: /tmp/hello.war
+    flat: yes

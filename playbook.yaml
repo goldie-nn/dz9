@@ -1,0 +1,10 @@
+- name: Build artifact
+  hosts: build
+  become: true
+  roles:
+    - build
+- name: Deploy to prod host
+  hosts: prod
+  become: true
+  roles:
+    - deploy
